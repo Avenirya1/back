@@ -16,6 +16,7 @@ const RestaurantSchema = new mongoose.Schema({
   default: "INR",
   enum: ["INR", "USD", "EUR", "GBP", "AED", "AUD", "CAD", "SGD", "JPY", "CNY"]
 },
+  slug: { type: String, required: true, unique: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model("Restaurant", RestaurantSchema);

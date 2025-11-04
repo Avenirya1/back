@@ -298,11 +298,23 @@ router.delete(
 );
 
 // Register a new restaurant
+// Register a new restaurant
 router.post("/restaurant/register", async (req, res) => {
   try {
-    const { name, email, password, logo, address, proFeatures, contact, subadmin_id, membership_level, currency } = req.body;
+    const {
+      name,
+      email,
+      password,
+      logo,
+      address,
+      proFeatures,
+      contact,
+      subadmin_id,
+      membership_level,
+      currency
+    } = req.body;
 
-    // Check if email is already registered
+    // Check if email already exists
     const existingRestaurant = await Restaurant.findOne({ email });
     if (existingRestaurant) {
       return res.status(400).json({ message: "Email already in use" });
@@ -311,7 +323,26 @@ router.post("/restaurant/register", async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Build restaurant object
+    // Generate base slug
+    let baseSlug = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "") // remove invalid characters
+      .replace(/\s+/g, "-") // replace spaces with dashes
+      .replace(/-+/g, "-"); // collapse multiple dashes
+
+    // Ensure slug uniqueness
+    let slug = baseSlug;
+    let slugExists = await Restaurant.findOne({ slug });
+    let count = 1;
+
+    while (slugExists) {
+      slug = `${baseSlug}-${count}`;
+      slugExists = await Restaurant.findOne({ slug });
+      count++;
+    }
+
+    // Create restaurant object
     const newRestaurantData = {
       name,
       email,
@@ -321,28 +352,29 @@ router.post("/restaurant/register", async (req, res) => {
       contact,
       proFeatures: proFeatures || false,
       membership_level,
-      currency
+      currency,
+      slug
     };
 
-    // Conditionally include subadmin_id if provided
     if (subadmin_id) {
       newRestaurantData.subadmin_id = subadmin_id;
     }
 
-    // Create and save restaurant
+    // Save to DB
     const newRestaurant = new Restaurant(newRestaurantData);
     await newRestaurant.save();
 
     res.status(201).json({
       message: "Restaurant registered successfully",
-      restaurant: newRestaurant,
+      restaurant: newRestaurant
     });
-
   } catch (error) {
     console.error("Error registering restaurant:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
+
+
 
 // GET all restaurants for a specific subadmin
 router.get("/restaurant/all", async (req, res) => {
@@ -916,6 +948,21 @@ router.get("/restaurants-with-many-menus", async (req, res) => {
   } catch (err) {
     console.error("Error fetching restaurants:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+router.get("/restaurants/slug/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const restaurant = await Restaurant.findOne({ slug }, "_id"); // only return _id
+    if (!restaurant) return res.status(404).json({ message: "Restaurant not found" });
+
+    res.json({ id: restaurant._id });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
