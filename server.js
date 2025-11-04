@@ -34,6 +34,7 @@ const allowedOrigins = [
   'https://menu-coral-tau.vercel.app',
   'http://localhost:3000', 
   'http://168.231.123.91', // for local development
+  'https://n8n.avenirya.com',
 ];
 
 app.use((req, res, next) => {
