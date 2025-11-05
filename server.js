@@ -35,6 +35,8 @@ const allowedOrigins = [
   'http://localhost:3000', 
   'http://168.231.123.91', // for local development
   'https://n8n.avenirya.com',
+  'https://scrollmenus.com',
+  'https://www.scrollmenus.com',
 ];
 
 app.use((req, res, next) => {
