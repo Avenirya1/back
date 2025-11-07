@@ -142,16 +142,35 @@ router.get("/restaurants/check-email", async (req, res) => {
 router.put("/restaurants/:id", async (req, res) => {
   try {
     const updates = { ...req.body };
+
+    // 🧩 Handle password hashing if provided
     if (updates.password) {
       updates.passwordHash = await bcrypt.hash(updates.password, 10);
       delete updates.password;
     }
+
+    // 🕐 Handle activation + expiration logic
+    if (typeof updates.active !== "undefined") {
+      if (updates.active) {
+        // If being activated, set expiresAt (if provided by frontend)
+        if (updates.expiresAt) {
+          updates.expiresAt = new Date(updates.expiresAt);
+        }
+      } else {
+        // If deactivating manually, clear expiry
+        updates.expiresAt = null;
+      }
+    }
+
+    // ✅ Update restaurant
     const updated = await Restaurant.findByIdAndUpdate(req.params.id, updates, { new: true });
     res.json(updated);
   } catch (err) {
+    console.error("Update failed:", err);
     res.status(500).json({ message: "Update failed" });
   }
 });
+
 
 // DELETE restaurant
 router.delete("/restaurants/:id", async (req, res) => {

@@ -3,6 +3,7 @@ console.log("✅ server.js started...");
 const express = require("express");
 const cors = require('cors');
 const mongoose = require("mongoose");
+const cron = require("node-cron");
 const dotenv = require("dotenv");
 const publicRoutes = require("./routes/public");
 const MenuItem = require("./models/MenuItem"); // adjust the path as needed
@@ -12,6 +13,15 @@ const OrderHistory = require("./models/OrderHistory"); // ✅ Add "./"
 dotenv.config();
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
+
+cron.schedule("0 * * * *", async () => {
+  const now = new Date();
+  await Restaurant.updateMany(
+    { active: true, expiresAt: { $lte: now } },
+    { $set: { active: false } }
+  );
+});
+
 
 // ✅ Razorpay Instance
 const razorpay = new Razorpay({
@@ -33,6 +43,7 @@ const allowedOrigins = [
   'https://menu-two-puce.vercel.app',
   'https://menu-coral-tau.vercel.app',
   'http://localhost:3000', 
+  'http://localhost:3001', 
   'http://168.231.123.91', // for local development
   'https://n8n.avenirya.com',
   'https://scrollmenus.com',
